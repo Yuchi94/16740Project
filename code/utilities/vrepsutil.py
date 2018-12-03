@@ -14,44 +14,45 @@ import time
 ############## Initialization ################
 
 def ConnectVREPS():
+    clientID = -1
     vrep.simxFinish(-1) # just in case, close all opened connections
-    clientID=vrep.simxStart('127.0.0.1',19997,True,True,5000,5) # Connect to V-REP
-    if clientID==-1:
-        print ('Failed connecting to remote API server')
-        exit()
-    else:
-        vrep.simxSynchronous(clientID,True)
-        #print ('Connected to remote API server')
+    while clientID == -1:
+        clientID = vrep.simxStart('127.0.0.1',19997,True,True,5000,5) # Connect to V-REP
+        if clientID == -1:
+            print ('Failed connecting to remote API server, retry..')
+        else:
+            vrep.simxSynchronous(clientID,True)
+            break
     return clientID
 
 def GetRobotHandles(clientID):
     JointNames=["Prismatic_joint_X","Prismatic_joint_Y","Prismatic_joint_Z","Revolute_joint_Z","Revolute_joint_Y","Revolute_joint_X","Prismatic_joint_Fing1","Prismatic_joint_Fing2"]
     JointHandles=[vrep.simxGetObjectHandle(clientID,Name,vrep.simx_opmode_blocking)[1] for Name in JointNames]
-    
+
     EENames=["EndEffector"]
     EEHandles=[vrep.simxGetObjectHandle(clientID,Name,vrep.simx_opmode_blocking)[1] for Name in EENames]
-  
+
     FTNames=["FT_sensor_Wrist","FT_sensor_EE"]
     FTHandles=[vrep.simxGetObjectHandle(clientID,Name,vrep.simx_opmode_blocking)[1] for Name in FTNames]
 
     CamRGBNames=["PalmCam_RGB"]
     CamRGBHandles=[vrep.simxGetObjectHandle(clientID,Name,vrep.simx_opmode_blocking)[1] for Name in CamRGBNames]
-  
-    CamDepthNames=["PalmCam_Depth"]  
-    CamDepthHandles=[vrep.simxGetObjectHandle(clientID,Name,vrep.simx_opmode_blocking)[1] for Name in CamDepthNames]    
-  
+
+    CamDepthNames=["PalmCam_Depth"]
+    CamDepthHandles=[vrep.simxGetObjectHandle(clientID,Name,vrep.simx_opmode_blocking)[1] for Name in CamDepthNames]
+
     RobotHandles={"Joint":JointHandles,"EE":EEHandles,"FT":FTHandles,"RGB":CamRGBHandles,"Depth":CamDepthHandles};
-  
-  
+
+
     ## Start Data Streaming
     JointPosition=[vrep.simxGetJointPosition(clientID, jointHandle, vrep.simx_opmode_streaming)[1] for jointHandle in RobotHandles["Joint"]];
     EEPose=vrep.simxGetObjectPosition(clientID,RobotHandles["EE"][0],-1,vrep.simx_opmode_streaming)[1];
-    EEPose.extend(vrep.simxGetObjectOrientation(clientID,RobotHandles["EE"][0],-1,vrep.simx_opmode_streaming)[1]);      
+    EEPose.extend(vrep.simxGetObjectOrientation(clientID,RobotHandles["EE"][0],-1,vrep.simx_opmode_streaming)[1]);
     FTVal=[vrep.simxReadForceSensor(clientID,FTHandle,vrep.simx_opmode_streaming)[2:4] for FTHandle in RobotHandles["FT"]];
-    
+
     RobotVisionRGB=[vrep.simxGetVisionSensorImage(clientID,sensorHandle,0,vrep.simx_opmode_streaming) for sensorHandle in RobotHandles["RGB"]];
     RobotVisionDepth=[vrep.simxGetVisionSensorDepthBuffer(clientID,sensorHandle,vrep.simx_opmode_streaming) for sensorHandle in RobotHandles["Depth"]];
-    
+
     return RobotHandles
 
 
@@ -59,7 +60,7 @@ def GetRobotHandles(clientID):
 
 def GenBasicObjDesc():
     ObjDesc=[]
-    
+
     DynObj=[]
     DynObj.extend([1.0,
                    0.05,0.05,0.05,
@@ -67,7 +68,7 @@ def GenBasicObjDesc():
                    0.,0.,0.,
                    0.2])
     ObjDesc.append(DynObj)
-    
+
     DynObj=[]
     DynObj.extend([1.0,
                    0.05,0.05,0.05,
@@ -80,15 +81,15 @@ def GenBasicObjDesc():
                    0.,0.,0.,
                    0.2])
     ObjDesc.append(DynObj)
-    
+
     return ObjDesc, []
 
 def GenConGridObjDesc(seed=0):
     ObjDesc=[]
-    
+
     # IF you want to control the environment produced
     rng = np.random.RandomState(seed=seed)
-    
+
     Blocks = np.zeros((4, 4))
     block_id = 0
     for i in range(4):
@@ -165,17 +166,17 @@ def GenConGridObjDesc(seed=0):
             c += 1
             a = a + construct_block(xs[i], ys[i])
         vrep_blocks.append(a)
-            
+
     num_blocks = len(vrep_blocks)
 
     DynObj=[]
     for i in range(num_blocks):
         ObjDesc.append(vrep_blocks[i])
-      
+
     return ObjDesc, [], obstacles
 
 
-  
+
 def GenBasicDoorObjDesc():
     ObjDesc=[]
 
@@ -189,7 +190,7 @@ def GenBasicDoorObjDesc():
                    0.25,0.005,0.5,
                    0.0,-0.5+0.0025,0.3,
                    0.,0.,0.,
-                   0.1])    
+                   0.1])
     DynObj.extend([1.0,
                    0.05,0.005,0.05,
                    # 0.0,-0.5+0.05025,0.26,
@@ -197,45 +198,45 @@ def GenBasicDoorObjDesc():
                    0.,0.,0.,
                    0.1])
     ObjDesc.append(DynObj)
-    
+
     JointDesc=[]
     JointDesc.append([0, 0, 0,   0.125,-0.5+0.0025,0.26,     0*1.57,0,0.])
-  
-    return ObjDesc,JointDesc  
+
+    return ObjDesc,JointDesc
 
 def GenObjects(clientID,ObjDesc):
     ObjectHandles=[]
     BlockHandles=[]
     AllHandles=[]
     for i in range(len(ObjDesc)):
-        res,retInts,retFloats,retStrings,retBuffer=vrep.simxCallScriptFunction(clientID,'WorldCreator',vrep.sim_scripttype_childscript,'createDynObject',[],ObjDesc[i],[],bytearray(),vrep.simx_opmode_blocking) 
+        res,retInts,retFloats,retStrings,retBuffer=vrep.simxCallScriptFunction(clientID,'WorldCreator',vrep.sim_scripttype_childscript,'createDynObject',[],ObjDesc[i],[],bytearray(),vrep.simx_opmode_blocking)
         ObjectHandles.extend([retInts[0]])
         if len(retInts[1:])==1:
-            BlockHandles.extend(retInts[1:])    
+            BlockHandles.extend(retInts[1:])
         else:
             BlockHandles.extend(retInts[1:])
             AllHandles.append(retInts)
-            
+
     ObjHandles={"Object":ObjectHandles, "Block":BlockHandles, "All":AllHandles}
 
     for i in range(len(ObjHandles["Object"])):
         ObjectPose=vrep.simxGetObjectPosition(clientID,ObjHandles["Object"][i],-1,vrep.simx_opmode_streaming)[1]
         ObjectPose.extend(vrep.simxGetObjectOrientation(clientID,ObjHandles["Object"][i],-1,vrep.simx_opmode_streaming)[1])
-      
+
     for i in range(len(ObjHandles["Block"])):
         BlockPose=vrep.simxGetObjectPosition(clientID,ObjHandles["Block"][i],-1,vrep.simx_opmode_streaming)[1]
         BlockPose.extend(vrep.simxGetObjectOrientation(clientID,ObjHandles["Block"][i],-1,vrep.simx_opmode_streaming)[1])
-      
+
     return ObjHandles
 
 def GenJoints(clientID,ObjHandles,JointDesc):
-    JointHandles=[]  
+    JointHandles=[]
     for i in range(len(JointDesc)):
         intData=[int(JointDesc[i][0]),   ObjHandles["Object"][int(JointDesc[i][1])], ObjHandles["Object"][int(JointDesc[i][2])] ];
         floatData=JointDesc[i][3:];
         res,retInts,retFloats,retStrings,retBuffer=vrep.simxCallScriptFunction(clientID,'WorldCreator',vrep.sim_scripttype_childscript,'createDynJoint',intData,floatData,[],bytearray(),vrep.simx_opmode_blocking)
-        JointHandles.extend(retInts)    
-      
+        JointHandles.extend(retInts)
+
     return JointHandles
 
 
@@ -247,9 +248,9 @@ def GetRobotState(clientID,RobotHandles):
 
     EEPose=vrep.simxGetObjectPosition(clientID,RobotHandles["EE"][0],-1,vrep.simx_opmode_buffer)[1];
     EEPose.extend(vrep.simxGetObjectOrientation(clientID,RobotHandles["EE"][0],-1,vrep.simx_opmode_buffer)[1]);
-    
+
     FTVal=[vrep.simxReadForceSensor(clientID,FTHandle,vrep.simx_opmode_buffer)[2:4] for FTHandle in RobotHandles["FT"]];
-    
+
     RobotState={"JointPos":JointPosition,"EEPose":EEPose,"FTVal":FTVal}
     return RobotState
 
@@ -261,20 +262,20 @@ def GetObjState(clientID,ObjHandles):
         ObjectPose=vrep.simxGetObjectPosition(clientID,ObjHandles["Object"][i],-1,vrep.simx_opmode_buffer)[1]
         ObjectPose.extend(vrep.simxGetObjectOrientation(clientID,ObjHandles["Object"][i],-1,vrep.simx_opmode_buffer)[1])
         ObjectPoses.append(ObjectPose)
-      
+
     BlockPoses=[]
     for i in range(len(ObjHandles["Block"])):
         BlockPose=vrep.simxGetObjectPosition(clientID,ObjHandles["Block"][i],-1,vrep.simx_opmode_buffer)[1]
         BlockPose.extend(vrep.simxGetObjectOrientation(clientID,ObjHandles["Block"][i],-1,vrep.simx_opmode_buffer)[1])
         BlockPoses.append(BlockPose)
-      
+
     ObjState={"Object":ObjectPoses,"Block":BlockPoses}
-    return ObjState  
+    return ObjState
 
 
 
 def GetRobotVision(clientID,RobotHandles):
-    RobotVisionRGBRaw=[vrep.simxGetVisionSensorImage(clientID,sensorHandle,0,vrep.simx_opmode_buffer)[2] for sensorHandle in RobotHandles["RGB"]]    
+    RobotVisionRGBRaw=[vrep.simxGetVisionSensorImage(clientID,sensorHandle,0,vrep.simx_opmode_buffer)[2] for sensorHandle in RobotHandles["RGB"]]
     RobotVisionDepthRaw=[vrep.simxGetVisionSensorDepthBuffer(clientID,sensorHandle,vrep.simx_opmode_buffer)[2] for sensorHandle in RobotHandles["Depth"]]
 
     RobotVisionRGB=[]
@@ -282,12 +283,12 @@ def GetRobotVision(clientID,RobotHandles):
         img=np.array(RobotVisionRGBRaw,dtype=np.uint8)
         img.resize([480,640,3])
         RobotVisionRGB.append(img)
-      
+
     RobotVisionDepth=[]
     for i in range(len(RobotVisionDepthRaw)):
         img=np.array(RobotVisionDepthRaw)*.6
         img.resize([480,640])
-        RobotVisionDepth.append(img) 
+        RobotVisionDepth.append(img)
 
     RobotVision={"RGB":RobotVisionRGB,"Depth":RobotVisionDepth}
     return RobotVision
@@ -312,8 +313,3 @@ def StepSim(clientID, nrSteps=1):
         vrep.simxSynchronousTrigger(clientID)
         vrep.simxStartSimulation(clientID,vrep.simx_opmode_oneshot)
     return
-
-
-
-
-
