@@ -139,6 +139,18 @@ class RegressionNetwork(object):
     })
 
 
+  def predict(self, X_val):
+    """
+    Predict.
+    """
+
+    Y_pred_val = self.sess.run(self.interfaces['Y_pred'], {
+      self.interfaces['X']: X_val
+    })
+
+    return Y_pred_val
+
+
   def evaluate(self, X_val, Y_val):
     """
     Evaluate the network.
@@ -253,6 +265,11 @@ def _test():
   history = net.train(X_train, Y_train, X_valid, Y_valid, epochs=20, verbose=True)
 
   # test the network
+  Y_test_pred = net.predict(X_test)
+  print('Y_test = ')
+  print(Y_test[:10])
+  print('Y_test_pred = ')
+  print(Y_test_pred[:10])
   metrics_test = net.test(X_test, Y_test, verbose=True)
 
 
