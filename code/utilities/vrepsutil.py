@@ -1,4 +1,4 @@
-import os, sys
+import os, sys, pdb
 sys.path.append(os.getcwd())
 
 try:
@@ -149,29 +149,29 @@ def GenConGridObjDesc(seed=0):
     obstacles = []
     NewBlocks = np.zeros((4, 4))
     unique_block_ids = np.unique(Blocks.flatten())
-    # def construct_block(i, j):
+    def construct_block(i, j):
 
-    #     blk = [3, 0.055,0.055,0.695, -0.3+float(i)*.2 + np.random.uniform(0, 0.1),-0.3+float(j)*.2 + np.random.uniform(0, 0.1),0.35, 0.,0.,0.,0.2]
-    #     obstacles.append(np.array(blk[4:6]))
-    #     return blk
+        blk = [3, 0.055,0.055,0.695, -0.3+float(i)*.2 + np.random.uniform(0, 0.1),-0.3+float(j)*.2 + np.random.uniform(0, 0.1),0.35, 0.,0.,0.,0.2]
+        obstacles.append(np.array(blk[4:6]))
+        return blk
 
-    # c = 1
-    # np.random.seed(0)
-    # for block_id in unique_block_ids:
-    #     xs, ys = np.where(Blocks == block_id)
-    #     num = xs.shape[0]
-    #     a = []
-    #     for i in range(num):
-    #         NewBlocks[xs[i], ys[i]] = c
-    #         c += 1
-    #         a = a + construct_block(xs[i], ys[i])
-    #     vrep_blocks.append(a)
+    c = 1
+    np.random.seed(0)
+    for block_id in unique_block_ids:
+        xs, ys = np.where(Blocks == block_id)
+        num = xs.shape[0]
+        a = []
+        for i in range(num):
+            NewBlocks[xs[i], ys[i]] = c
+            c += 1
+            a = a + construct_block(xs[i], ys[i])
+        vrep_blocks.append(a)
 
-    # num_blocks = len(vrep_blocks)
+    num_blocks = len(vrep_blocks)
 
-    # DynObj=[]
-    # for i in range(num_blocks):
-    #     ObjDesc.append(vrep_blocks[i])
+    DynObj=[]
+    for i in range(num_blocks):
+        ObjDesc.append(vrep_blocks[i])
 
     return ObjDesc, [], obstacles
 
