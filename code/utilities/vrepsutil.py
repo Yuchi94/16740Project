@@ -152,7 +152,7 @@ def GenConGridObjDesc(seed=0):
     def construct_block(i, j):
 
         blk = [3, 0.055,0.055,0.695, -0.3+float(i)*.2 + np.random.uniform(0, 0.1),-0.3+float(j)*.2 + np.random.uniform(0, 0.1),0.35, 0.,0.,0.,0.2]
-        obstacles.append(np.array(blk[4:6]))
+        # obstacles.append(np.array(blk[4:6]))
         return blk
 
     c = 1
