@@ -233,9 +233,8 @@ def main(args):
   plan = planner.Plan(np.array([0, 0.5]), np.array([0, -0.5]))
 
   for p in plan:
-    h = np.random.uniform(0, 5)
     for i in range(10):
-      env.setRobotPosition(np.array([p[0], p[1], h]))
+      env.setRobotPosition(np.array([p[0], p[1], 0.5]))
 
   env.close()
 
