@@ -258,7 +258,8 @@ class BoundedRegressionNetwork(object):
     metrics_test = self.evaluate(X_test, Y_test)
 
     # log
-    print('test: test_loss=%.4f' % (metrics_test['loss']))
+    if verbose:
+      print('test: test_loss=%.4f' % (metrics_test['loss']))
 
     return metrics_test
 
