@@ -90,8 +90,8 @@ class VRepEnvironment(object):
     vrep.simxStartSimulation(self.client_id, vrep.simx_opmode_oneshot)
 
     object_desc, joint_desc, self.obstacles = vu.GenConGridObjDesc()
-
-    self.object_handles = vu.GenObjects(self.client_id, object_desc)
+    # pdb.set_trace()
+    # self.object_handles = vu.GenObjects(self.client_id, object_desc, 0)
 
     object_desc, joint_desc = vu.GenBasicDoorObjDesc()
     self.object_handles = vu.GenObjects(self.client_id, object_desc)
@@ -233,8 +233,9 @@ def main(args):
   plan = planner.Plan(np.array([0, 0.5]), np.array([0, -0.5]))
 
   for p in plan:
+    h = np.random.uniform(0, 5)
     for i in range(10):
-      env.setRobotPosition(np.array([p[0], p[1], 0.5]))
+      env.setRobotPosition(np.array([p[0], p[1], h]))
 
   env.close()
 
