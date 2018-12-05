@@ -232,10 +232,13 @@ def main(args):
   planner = RRTConnectPlanner(env.obstacles)
   plan = planner.Plan(np.array([0, 0.5]), np.array([0, -0.5]))
 
-  for p in plan:
+  for p in plan[:-1]:
     h = np.random.uniform(0, 5)
     for i in range(10):
       env.setRobotPosition(np.array([p[0], p[1], h]))
+
+  for i in range(10): 
+    env.setRobotPosition(np.array([plan[-1][0], plan[-1][1], 0]))
 
   env.close()
 
