@@ -23,6 +23,7 @@ class RegressionNetwork(object):
         (64, 'relu'),
         (32, 'relu')
       ],
+      'use_minibatch': True,
       'batch_size': 32
     }
 
@@ -184,7 +185,8 @@ class RegressionNetwork(object):
       random.shuffle(indices_train)
 
       # train through all training samples
-      for i_batch in tqdm(range(N_batches)):
+      enumerator = tqdm(range(N_batches)) if verbose else range(N_batches)
+      for i_batch in enumerator:
         # determine sample indices for the training batch
         ptr_lower = i_batch * batch_size
         ptr_upper = ptr_lower + batch_size
@@ -257,6 +259,7 @@ def _test():
   options = {
     'x_dim': 3,
     'y_dim': 2,
+    'use_minibatch': True,
     'batch_size': 128
   }
 

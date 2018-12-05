@@ -27,6 +27,7 @@ class NNPolicy(object):
         (64, 'relu'),
         (32, 'relu')
       ],
+      'use_memory': False,
       'memory_size': 10000,
       'batch_size': 64
     }
@@ -49,7 +50,7 @@ class NNPolicy(object):
        'y_dim': self.options['u_dim'],
        'y_bounds': self.options['u_bounds'],
        'hidden_layers': self.options['hidden_layers'],
-       'batch_size': self.options['batch_size']
+       'use_minibatch': False
     })
 
     # initialize variance network
@@ -57,7 +58,7 @@ class NNPolicy(object):
        'x_dim': self.options['x_dim'],
        'y_dim': self.options['u_dim'],
        'hidden_layers': self.options['hidden_layers'],
-       'batch_size': self.options['batch_size']
+       'use_minibatch': False
     })
 
 
@@ -66,13 +67,16 @@ class NNPolicy(object):
     Train the policy.
     """
 
+    use_memory = self.options['use_memory']
+
     # append to the memory
-    for i in range(len(X)):
-      self.memory_X.append(X[i])
-      self.memory_U.append(U[i])
+    if use_memory:
+      for i in range(len(X)):
+        self.memory_X.append(X[i])
+        self.memory_U.append(U[i])
 
     # train the policy network
-    hist_policy = self.policy_net.train(self.memory_X, self.memory_U, epochs=epochs, verbose=False)
+    hist_policy = self.policy_net.train(X, U, epochs=epochs, verbose=False)
 
     # predict the mean output values and calculate the sample variance
     U_mean = self.policy_net.predict(X)
@@ -153,16 +157,16 @@ def _test():
   options = {
     'x_dim': 3,
     'u_dim': 2,
-    'u_bounds': u_bounds,
-    'batch_size': 128
+    'u_bounds': u_bounds
   }
 
   net = NNPolicy(options)
 
   # train the network
-  N_batches = len(X_train) // 1000
+  batch_size = 128
+  N_batches = len(X_train) // batch_size
   for i in range(N_batches):
-    policy_loss, variance_loss = net.train(X_train[i*128:(i+1)*128], U_train[i*128:(i+1)*128], epochs=1, verbose=True)
+    policy_loss, variance_loss = net.train(X_train[i*batch_size:(i+1)*batch_size], U_train[i*batch_size:(i+1)*batch_size], epochs=3, verbose=True)
 
   # test the network
   U_pred, Sigma_pred = net.predict(X_test)
