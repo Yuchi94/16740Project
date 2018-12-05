@@ -1,4 +1,4 @@
-import os, sys
+import os, sys, pdb
 sys.path.append(os.getcwd())
 
 try:
@@ -151,7 +151,7 @@ def GenConGridObjDesc(seed=0):
     unique_block_ids = np.unique(Blocks.flatten())
     def construct_block(i, j):
 
-        blk = [3, 0.055,0.055,0.695, -0.3+float(i)*.2 + np.random.uniform(0, 0.1),-0.3+float(j)*.2 + np.random.uniform(0, 0.1),0.35, 0.,0.,0.,0.2]
+        blk = [3, 0.055,0.055,0.695, -0.3+float(i)*.2 + np.random.uniform(0, 0.1),-0.3+float(j)*.2 + np.random.uniform(0, 0.1),0.35, 0.,0.,0.,1000]
         obstacles.append(np.array(blk[4:6]))
         return blk
 
@@ -204,12 +204,13 @@ def GenBasicDoorObjDesc():
 
     return ObjDesc,JointDesc
 
-def GenObjects(clientID,ObjDesc):
+def GenObjects(clientID,ObjDesc, offset = 0):
     ObjectHandles=[]
     BlockHandles=[]
     AllHandles=[]
     for i in range(len(ObjDesc)):
-        res,retInts,retFloats,retStrings,retBuffer=vrep.simxCallScriptFunction(clientID,'WorldCreator',vrep.sim_scripttype_childscript,'createDynObject',[],ObjDesc[i],[],bytearray(),vrep.simx_opmode_blocking)
+        # pdb.set_trace()
+        res,retInts,retFloats,retStrings,retBuffer=vrep.simxCallScriptFunction(clientID,'WorldCreator',vrep.sim_scripttype_childscript + offset,'createDynObject',[],ObjDesc[i],[],bytearray(),vrep.simx_opmode_blocking)
         ObjectHandles.extend([retInts[0]])
         if len(retInts[1:])==1:
             BlockHandles.extend(retInts[1:])

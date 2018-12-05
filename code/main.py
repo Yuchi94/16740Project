@@ -90,8 +90,8 @@ class VRepEnvironment(object):
     vrep.simxStartSimulation(self.client_id, vrep.simx_opmode_oneshot)
 
     object_desc, joint_desc, self.obstacles = vu.GenConGridObjDesc()
-
-    self.object_handles = vu.GenObjects(self.client_id, object_desc)
+    # pdb.set_trace()
+    # self.object_handles = vu.GenObjects(self.client_id, object_desc, 0)
 
     object_desc, joint_desc = vu.GenBasicDoorObjDesc()
     self.object_handles = vu.GenObjects(self.client_id, object_desc)
