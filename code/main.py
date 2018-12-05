@@ -230,11 +230,15 @@ def main(args):
   signal.signal(signal.SIGINT, env.signal_handler)
 
   planner = RRTConnectPlanner(env.obstacles)
-  plan = planner.Plan(np.array([0, 0.5]), np.array([0, -0.5]))
+  plan_raw = planner.Plan(np.array([0, 0.5]), np.array([0, -0.5]))
+
+  plan = []
+  for p in plan_raw:
+    plan.append(np.array([p[0], p[1], 0.5]))
 
   for p in plan:
     for i in range(10):
-      env.setRobotPosition(np.array([p[0], p[1], 0.5]))
+      env.setRobotPosition(np.array(p))
 
   env.close()
 
