@@ -91,7 +91,6 @@ class VRepEnvironment(object):
 
     object_desc, joint_desc, self.obstacles = vu.GenConGridObjDesc()
     # self.object_handles = vu.GenObjects(self.client_id, object_desc, 0)
-    pdb.set_trace()
 
     object_desc, joint_desc = vu.GenBasicDoorObjDesc()
     self.object_handles = vu.GenObjects(self.client_id, object_desc)
@@ -101,7 +100,6 @@ class VRepEnvironment(object):
 
     self.door_id = 0
     self.doorhandle_id = 1
-    #pdb.set_trace()
 
     # Set goal position for reacher task
     self.reacher_goal_position = self.DoorHandlePosition.copy()
@@ -231,13 +229,12 @@ def main(args):
 
   planner = RRTConnectPlanner(env.obstacles)
   plan = planner.Plan(np.array([0, 0.5, 0.5]), np.array([0, -0.5, 0.25]))
-  pdb.set_trace()
   for p in plan:
     # h = np.random.uniform(0, 5)
     for i in range(10):
       env.setRobotPosition(np.array([p[0], p[1], p[2]]))
 
-  # for i in range(10): 
+  # for i in range(10):
   #   env.setRobotPosition(np.array([plan[-1][0], plan[-1][1], 0]))
 
   env.close()
