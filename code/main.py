@@ -4,6 +4,7 @@
 Skill Learning
 """
 import argparse, math, os, random, sys, signal, time, scipy.integrate, scipy.optimize, pdb
+import time
 sys.path.append("utilities")
 sys.path.append(os.getcwd())
 
@@ -227,6 +228,7 @@ def main(args):
   env = VRepEnvironment(args.task_id)
   signal.signal(signal.SIGINT, env.signal_handler)
 
+  np.random.seed(int(time.time()))
   planner = RRTConnectPlanner(env.obstacles)
   plan = planner.Plan(np.array([0, 0.5, 0.5]), np.array([0, -0.5, 0.25]))
   for p in plan:

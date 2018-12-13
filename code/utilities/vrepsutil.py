@@ -156,7 +156,6 @@ def GenConGridObjDesc(seed=0):
         return blk
 
     c = 1
-    np.random.seed(0)
     for block_id in unique_block_ids:
         xs, ys = np.where(Blocks == block_id)
         num = xs.shape[0]
