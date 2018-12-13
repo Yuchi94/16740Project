@@ -237,7 +237,8 @@ def main(args):
 
   # define starting state and goal state
   s_init = np.array([0, 0.5, 0.5])
-  s_goal = np.array([0, -0.5, 0.25])
+  #s_goal = np.array([0, -0.5, 0.25])
+  s_goal = np.array([0, 0.5, 0.25])
 
   # set the end-effector to the initial state
   s_cur = s_init
