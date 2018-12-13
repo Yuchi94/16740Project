@@ -19,6 +19,8 @@ import numpy as np
 import vrepsutil as vu
 from RRTTree import RRTTree
 from RRTConnect import RRTConnectPlanner
+from sbp import SBPlanner
+
 # Constants/hyperparameters - DO NOT MODIFY!
 NUM_BASIS = 3
 NUM_DIM = 3
@@ -227,17 +229,34 @@ class VRepEnvironment(object):
 def main(args):
   env = VRepEnvironment(args.task_id)
   signal.signal(signal.SIGINT, env.signal_handler)
-
   np.random.seed(int(time.time()))
-  planner = RRTConnectPlanner(env.obstacles)
-  plan = planner.Plan(np.array([0, 0.5, 0.5]), np.array([0, -0.5, 0.25]))
-  for p in plan:
-    # h = np.random.uniform(0, 5)
-    for i in range(10):
-      env.setRobotPosition(np.array([p[0], p[1], p[2]]))
 
-  # for i in range(10):
-  #   env.setRobotPosition(np.array([plan[-1][0], plan[-1][1], 0]))
+  # initialize planner
+  #planner = RRTConnectPlanner(env.obstacles)
+  planner = SBPlanner(env.obstacles)
+
+  # define starting state and goal state
+  s_init = np.array([0, 0.5, 0.5])
+  s_goal = np.array([0, -0.5, 0.25])
+
+  # set the end-effector to the initial state
+  s_cur = s_init
+  for i in range(10):
+    print('-> %s' % (str(s_cur)))
+    env.setRobotPosition(s_cur.copy())
+
+  # find a plan
+  plan = planner.Plan(s_init, s_goal)
+
+  pdb.set_trace()
+
+  # execute the plan
+  for t, a in enumerate(plan):
+    print('execute %s @ %d' % (str(a), t))
+    s_cur = s_cur + a
+    for i in range(10):
+      print('-> %s' % (str(s_cur)))
+      env.setRobotPosition(s_cur.copy())
 
   env.close()
 
