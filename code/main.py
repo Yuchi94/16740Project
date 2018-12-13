@@ -227,6 +227,12 @@ class VRepEnvironment(object):
 
 
 def main(args):
+  """
+  Launch.
+  """
+
+  print('initializing...')
+
   env = VRepEnvironment(args.task_id)
   signal.signal(signal.SIGINT, env.signal_handler)
   np.random.seed(int(time.time()))
@@ -239,6 +245,7 @@ def main(args):
   s_init = np.array([0, 0.5, 0.5])
   #s_goal = np.array([0, -0.5, 0.25])
   s_goal = np.array([0, 0.5, 0.25])
+  epsilon = 0.10
 
   # set the end-effector to the initial state
   s_cur = s_init
@@ -247,17 +254,25 @@ def main(args):
     env.setRobotPosition(s_cur.copy())
 
   # find a plan
+  print('planning...')
+  print('s_init  = %s' % (str(s_init)))
+  print('s_goal  = %s' % (str(s_goal)))
+  print('epsilon = %f' % (epsilon))
+  print('step    = %f' % (epsilon / 4.0))
   plan = planner.Plan(s_init, s_goal)
 
-  pdb.set_trace()
+  input('press any key to continue...')
 
   # execute the plan
+  print('executing...')
   for t, a in enumerate(plan):
     print('execute %s @ %d' % (str(a), t))
     s_cur = s_cur + a
     for i in range(10):
       print('-> %s' % (str(s_cur)))
       env.setRobotPosition(s_cur.copy())
+
+  input('press any key to continue...')
 
   env.close()
 
