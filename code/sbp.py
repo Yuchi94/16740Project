@@ -63,8 +63,21 @@ class SBPlanner():
       np.array([    0.0,    0.0, -delta ])
     ]
 
+    A = [
+      np.array([  1,    0,    0 ]),
+      np.array([ -1,    0,    0 ]),
+      np.array([    0,  1,    0 ]),
+      np.array([    0, -1,    0 ]),
+      np.array([    0,    0,  1]),
+      np.array([    0,    0, -1])
+    ]
+
+    def getLocation(start, shift):
+        return start + shift * epsilon / 4.0
+
     # initialize search tree
-    tree_nodes    = [ (np.array(s_init), None) ]
+
+    tree_nodes    = [ (np.array([0,0,0]), None) ]
     tree_parent   = [ -1 ]
     tree_children = [ set() ]
 
@@ -86,8 +99,15 @@ class SBPlanner():
         print(len(tree_nodes), len(q))
 
       # check goal
-      if np.linalg.norm(np.array(s_goal) - s_cur) < epsilon:
-        plan = self.backtrack(tree_nodes, tree_parent, n)
+      if np.linalg.norm(np.array(s_goal) - getLocation(s_init, s_cur)) < epsilon:
+        #plan = self.backtrack(tree_nodes, tree_parent, n)
+        inv_plan = [ tree_nodes[n][1] ]
+
+        while tree_parent[n] > 0:
+          n = tree_parent[n]
+          inv_plan.append(getLocation(s_init, tree_nodes[n][1]))
+
+        plan = inv_plan.reverse()
         break
 
       # append valid successors
@@ -99,7 +119,7 @@ class SBPlanner():
           continue
 
         # check collision
-        if self.checkCollision(s_next):
+        if self.checkCollision(getLocation(s_init, s_next)):
           continue
 
         # append to the search tree

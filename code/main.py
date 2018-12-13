@@ -20,6 +20,7 @@ import vrepsutil as vu
 from RRTTree import RRTTree
 from RRTConnect import RRTConnectPlanner
 from sbp import SBPlanner
+from astar import AStar
 
 # Constants/hyperparameters - DO NOT MODIFY!
 NUM_BASIS = 3
@@ -239,12 +240,13 @@ def main(args):
 
   # initialize planner
   #planner = RRTConnectPlanner(env.obstacles)
-  planner = SBPlanner(env.obstacles)
+  #planner = SBPlanner(env.obstacles)
+  planner = AStar(env.obstacles)
 
   # define starting state and goal state
   s_init = np.array([0, 0.5, 0.5])
-  #s_goal = np.array([0, -0.5, 0.25])
-  s_goal = np.array([0, 0.5, 0.25])
+  s_goal = np.array([0, -0.5, 0.25])
+  #s_goal = np.array([0, 0.5, 0.25])
   epsilon = 0.10
 
   # set the end-effector to the initial state
@@ -267,10 +269,10 @@ def main(args):
   print('executing...')
   for t, a in enumerate(plan):
     print('execute %s @ %d' % (str(a), t))
-    s_cur = s_cur + a
+    #s_cur = s_cur + a
     for i in range(10):
-      print('-> %s' % (str(s_cur)))
-      env.setRobotPosition(s_cur.copy())
+      #print('-> %s' % (str(a)))
+      env.setRobotPosition(a.copy())
 
   input('press any key to continue...')
 
