@@ -227,28 +227,51 @@ class VRepEnvironment(object):
     self.setup_simulation()
 
 
-def main(args):
+def run_collect_dataset(planner, s_init_range_scale, s_init_range_min, s_goal, epsilon, N):
   """
-  Launch.
+  Collect dataset.
   """
 
-  print('initializing...')
+  import pickle
+  from tqdm import tqdm
+  import datetime
 
-  env = VRepEnvironment(args.task_id)
-  signal.signal(signal.SIGINT, env.signal_handler)
-  np.random.seed(int(time.time()))
+  dataset = []
 
-  # initialize planner
-  #planner = RRTConnectPlanner(env.obstacles)
-  #planner = SBPlanner(env.obstacles)
-  planner = AStar(env.obstacles)
+  print('collecting dataset...')
+  for i in tqdm(range(N)):
+    plan = None
+    s_init = None
+    while plan is None:
+      # define random initial state
+      s_init = np.random.random(3) * s_init_range_scale + s_init_range_min
 
-  # define starting state and goal state
-  #s_init = np.array([0, 0.5, 0.5])
-  s_init = np.random.random(3) * np.array([1.0, 0.0, 0.5]) + np.array([-0.5, 0.5, 0.0])
-  s_goal = np.array([0, -0.5, 0.25])
-  #s_goal = np.array([0, 0.5, 0.25])
-  epsilon = 0.10
+      # plan for goal
+      plan = planner.Plan(s_init, s_goal)
+
+    # add to the dataset
+    s_cur = s_init
+    for t, a in enumerate(plan):
+      dataset.append((s_cur, a))
+      s_cur = s_cur + a
+
+  # save the dataset
+  timestamp = datetime.datetime.now().timestamp()
+  save_file_name = 'dataset.' + str(timestamp) + '.pkl'
+  with open(save_file_name, 'wb') as f:
+    pickle.dump(dataset, f)
+  print('dataset saved to %s' % (save_file_name))
+
+  return dataset
+
+
+def run_test_planner(env, planner, s_init_range_scale, s_init_range_min, s_goal, epsilon):
+  """
+  Test planner.
+  """
+
+  # define starting state
+  s_init = np.random.random(3) * s_init_range_scale + s_init_range_min
 
   # set the end-effector to the initial state
   s_cur = s_init
@@ -277,7 +300,38 @@ def main(args):
 
   input('press any key to continue...')
 
+
+def main(args):
+  """
+  Launch.
+  """
+
+  print('initializing...')
+
+  env = VRepEnvironment(args.task_id)
+  signal.signal(signal.SIGINT, env.signal_handler)
+  np.random.seed(int(time.time()))
+
+  # initialize planner
+  #planner = RRTConnectPlanner(env.obstacles)
+  #planner = SBPlanner(env.obstacles)
+  planner = AStar(env.obstacles)
+
+  # define parameters
+  s_init_range_scale = np.array([1.0, 0.0, 0.5])
+  s_init_range_min   = np.array([-0.5, 0.5, 0.0])
+  s_goal             = np.array([0, -0.5, 0.25])
+  epsilon            = 0.10
+  N_dataset_samples  = 20
+
+  # test planner
+  #run_test_planner(env, planner, s_init_range_scale, s_init_range_min, s_goal, epsilon)
+
   env.close()
+
+  # collect dataset
+  run_collect_dataset(planner, s_init_range_scale, s_init_range_min, s_goal, epsilon, N_dataset_samples)
+
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()

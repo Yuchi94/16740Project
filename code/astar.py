@@ -122,10 +122,14 @@ class AStar():
             node[1] + computeDistance(node[3], n), next(tb), n))
         parents[tuple(n)] = (node[3], node[1] + computeDistance(node[3], n))
 
-    print("Should never reach here")
+    print('Failed to find a path (s_init = %s, s_goal = %s, epsilon = %f)' % (
+      s_init, s_goal, epsilon
+    ))
+    return None
 
-  def createPath(self, start, goal, parents, coord, getLocation):
-    print("number of explored nodes: " + str(len(parents)))
+  def createPath(self, start, goal, parents, coord, getLocation, verbose=False):
+    if verbose:
+      print("number of explored nodes: " + str(len(parents)))
 
     path = []
     path.append(goal)
@@ -137,7 +141,7 @@ class AStar():
       if coord is None:
         break
 
-    path.append(start)
+    #path.append(start)
     return path[::-1]
 
   def convertPathToPlan(self, path):
