@@ -244,7 +244,8 @@ def main(args):
   planner = AStar(env.obstacles)
 
   # define starting state and goal state
-  s_init = np.array([0, 0.5, 0.5])
+  #s_init = np.array([0, 0.5, 0.5])
+  s_init = np.random.random(3) * np.array([1.0, 0.0, 0.5]) + np.array([-0.5, 0.5, 0.0])
   s_goal = np.array([0, -0.5, 0.25])
   #s_goal = np.array([0, 0.5, 0.25])
   epsilon = 0.10
