@@ -72,9 +72,6 @@ class AStar():
     def computeDistance(a, b):
       return np.linalg.norm(a - b) * epsilon / 4.0
 
-
-
-
     h = [] #Use a heap
     parents = {}
     parents[(0,0,0)] = (None, 0)
@@ -110,15 +107,14 @@ class AStar():
                 break
             heapify(h)
 
-
-            #Collision
+        #Collision
         if self.checkCollision(getLocation(s_init, n)):
           continue
 
-            #Reached the end
+        #Reached the end
         if (np.linalg.norm(np.array(s_goal) - getLocation(s_init, n)) < epsilon):
           parents[tuple(n)] = (node[3], node[1] + computeDistance(node[3], n))
-          return self.createPath(s_init, s_goal, parents, n, getLocation)
+          return self.convertPathToPlan(self.createPath(s_init, s_goal, parents, n, getLocation))
 
         #Add parents
         heappush(h, (node[1] + computeDistance(node[3], n)
@@ -143,3 +139,9 @@ class AStar():
 
     path.append(start)
     return path[::-1]
+
+  def convertPathToPlan(self, path):
+    plan = []
+    for t in range(len(path) - 1):
+      plan.append(path[t+1] - path[t])
+    return plan

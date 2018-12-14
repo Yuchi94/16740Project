@@ -269,10 +269,10 @@ def main(args):
   print('executing...')
   for t, a in enumerate(plan):
     print('execute %s @ %d' % (str(a), t))
-    #s_cur = s_cur + a
+    s_cur = s_cur + a
     for i in range(10):
-      #print('-> %s' % (str(a)))
-      env.setRobotPosition(a.copy())
+      print('-> %s' % (str(s_cur)))
+      env.setRobotPosition(s_cur.copy())
 
   input('press any key to continue...')
 
