@@ -130,6 +130,24 @@ class NNPolicy(object):
     return metrics_test
 
 
+  def save(self, path_policy_net, path_variance_net):
+    """
+    Save the model.
+    """
+
+    self.policy_net.save(path_policy_net)
+    self.variance_net.save(path_variance_net)
+
+
+  def restore(self, path_policy_net, path_variance_net):
+    """
+    Restore the model.
+    """
+
+    self.policy_net.restore(path_policy_net)
+    self.variance_net.restore(path_variance_net)
+
+
 def _test():
   """
   Test for the neural network policy.

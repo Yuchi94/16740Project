@@ -71,6 +71,9 @@ class BoundedRegressionNetwork(object):
     # initialize global variables
     self.sess.run(tf.global_variables_initializer())
 
+    # initialize saver
+    self.saver = tf.train.Saver()
+
 
   def _build_model(self, X):
     """
@@ -270,6 +273,22 @@ class BoundedRegressionNetwork(object):
       print('test: test_loss=%.4f' % (metrics_test['loss']))
 
     return metrics_test
+
+
+  def save(self, model_path):
+    """
+    Save the model.
+    """
+
+    self.saver.save(self.sess, model_path)
+
+
+  def restore(self, model_path):
+    """
+    Restore the model.
+    """
+
+    self.saver.restore(self.sess, model_path)
 
 
 def _test():

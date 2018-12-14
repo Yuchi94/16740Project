@@ -1,9 +1,10 @@
+import os
 import numpy as np
 import pickle
 from nnpolicy import NNPolicy
 
 
-def train():
+def pretrain(epochs, savedir_policy_net, savedir_variance_net, retrain=False, keep_training=False):
   """
   Train neural network policy.
   """
@@ -12,7 +13,6 @@ def train():
   p = (0.8, 0.2) # data splitting
   scalar = 100
   batch_size = 128
-  epochs = 50
 
   # load data
   dataset = None
@@ -47,10 +47,22 @@ def train():
 
   net = NNPolicy(options)
 
-  N_batches = len(X_train) // batch_size
-  indices_train = [ i for i in range(len(X_train)) ]
+  # try to load from saved model
+  if not retrain:
+    try:
+      net.restore(
+        os.path.join(savedir_policy_net, 'model.ckpt'),
+        os.path.join(savedir_variance_net, 'model.ckpt')
+      )
+      print('loaded saved neural network policy model..')
+      if not keep_training:
+        return net
+    except Exception as e:
+      pass
 
   # train for multiple epochs
+  N_batches = len(X_train) // batch_size
+  indices_train = [ i for i in range(len(X_train)) ]
   for ep in range(epochs):
     # shuffle training samples
     np.random.shuffle(indices_train)
@@ -88,7 +100,7 @@ def train():
     print('epoch #%d: policy_loss: %.6f, variance_loss: %.6f' % (
       ep + 1,
       policy_loss_sum / len(indices_train),
-      variance_loss_sum / len(indices_train),
+      variance_loss_sum / len(indices_train)
     ))
 
   # test the network
@@ -100,6 +112,13 @@ def train():
   print('Sigma_pred = ')
   print(Sigma_pred[:10])
   metrics_test = net.test(X_test, U_test, verbose=True)
+
+  # save
+  net.save(
+    os.path.join(savedir_policy_net, 'model.ckpt'),
+    os.path.join(savedir_variance_net, 'model.ckpt')
+  )
+  print('saved neural network policy model..')
 
   return net
 

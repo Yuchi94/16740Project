@@ -21,7 +21,7 @@ from RRTTree import RRTTree
 from RRTConnect import RRTConnectPlanner
 from sbp import SBPlanner
 from astar import AStar
-import train_nnpolicy
+import pretrain_nnpolicy
 
 # Constants/hyperparameters - DO NOT MODIFY!
 NUM_BASIS = 3
@@ -348,7 +348,13 @@ def main(args):
   """
 
   print('pretraining policy...')
-  policy = train_nnpolicy.train()
+  policy = pretrain_nnpolicy.pretrain(
+    epochs = 200,
+    savedir_policy_net = 'saved/policy_net',
+    savedir_variance_net = 'saved/variance_net',
+    retrain = False,
+    keep_training = False
+  )
 
   print('initializing...')
 
