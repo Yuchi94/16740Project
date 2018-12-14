@@ -29,7 +29,8 @@ class NNPolicy(object):
       ],
       'use_memory': False,
       'memory_size': 10000,
-      'batch_size': 64
+      'batch_size': 64,
+      'lr': 0.001
     }
 
     for o in _options:
@@ -50,7 +51,8 @@ class NNPolicy(object):
        'y_dim': self.options['u_dim'],
        'y_bounds': self.options['u_bounds'],
        'hidden_layers': self.options['hidden_layers'],
-       'use_minibatch': False
+       'use_minibatch': False,
+       'lr': self.options['lr']
     })
 
     # initialize variance network
@@ -58,7 +60,8 @@ class NNPolicy(object):
        'x_dim': self.options['x_dim'],
        'y_dim': self.options['u_dim'],
        'hidden_layers': self.options['hidden_layers'],
-       'use_minibatch': False
+       'use_minibatch': False,
+       'lr': self.options['lr']
     })
 
 
@@ -90,7 +93,7 @@ class NNPolicy(object):
 
     # log
     if verbose:
-      print('nnpolicy trained (policy_loss: %.4f, variance_loss: %.4f)' % (
+      print('nnpolicy trained (policy_loss: %.6f, variance_loss: %.6f)' % (
         policy_loss, variance_loss
       ))
 
@@ -122,7 +125,7 @@ class NNPolicy(object):
 
     # log
     if verbose:
-      print('test: test_loss=%.4f' % (metrics_test['loss']))
+      print('test: test_loss=%.6f' % (metrics_test['loss']))
 
     return metrics_test
 

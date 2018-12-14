@@ -21,6 +21,7 @@ from RRTTree import RRTTree
 from RRTConnect import RRTConnectPlanner
 from sbp import SBPlanner
 from astar import AStar
+import train_nnpolicy
 
 # Constants/hyperparameters - DO NOT MODIFY!
 NUM_BASIS = 3
@@ -239,7 +240,10 @@ def run_collect_dataset(planner, s_init_range_scale, s_init_range_min, s_goal, e
   dataset = []
 
   print('collecting dataset...')
-  for i in tqdm(range(N)):
+  #for i in tqdm(range(N)):
+  for i in range(N):
+    print('collecting sample trajectory @ %d/%d' % (i+1, N))
+
     plan = None
     s_init = None
     while plan is None:
@@ -247,7 +251,10 @@ def run_collect_dataset(planner, s_init_range_scale, s_init_range_min, s_goal, e
       s_init = np.random.random(3) * s_init_range_scale + s_init_range_min
 
       # plan for goal
-      plan = planner.Plan(s_init, s_goal)
+      try:
+        plan = planner.Plan(s_init, s_goal)
+      except Exception as e:
+        plan = None
 
     # add to the dataset
     s_cur = s_init
@@ -301,10 +308,47 @@ def run_test_planner(env, planner, s_init_range_scale, s_init_range_min, s_goal,
   input('press any key to continue...')
 
 
+def run_test_policy(env, policy, s_init_range_scale, s_init_range_min, s_goal, epsilon):
+  """
+  Test planner.
+  """
+
+  scalar = 100
+  T = 100
+
+  # define starting state
+  s_init = np.random.random(3) * s_init_range_scale + s_init_range_min
+
+  # set the end-effector to the initial state
+  s_cur = s_init
+  for i in range(10):
+    print('-> %s' % (str(s_cur)))
+    env.setRobotPosition(s_cur.copy())
+
+  # find a plan
+  input('press any key to continue...')
+
+  # execute the plan
+  print('executing...')
+  U_pred, Sigma_pred = policy.predict([s_cur])
+  for t in range(T):
+    a = U_pred[0] / scalar
+    print('execute %s @ %d' % (str(a), t))
+    s_cur = s_cur + a
+    for i in range(10):
+      print('-> %s' % (str(s_cur)))
+      env.setRobotPosition(s_cur.copy())
+
+  input('press any key to continue...')
+
+
 def main(args):
   """
   Launch.
   """
+
+  print('pretraining policy...')
+  policy = train_nnpolicy.train()
 
   print('initializing...')
 
@@ -322,10 +366,13 @@ def main(args):
   s_init_range_min   = np.array([-0.5, 0.5, 0.0])
   s_goal             = np.array([0, -0.5, 0.25])
   epsilon            = 0.10
-  N_dataset_samples  = 20
+  N_dataset_samples  = 1000
 
   # test planner
   #run_test_planner(env, planner, s_init_range_scale, s_init_range_min, s_goal, epsilon)
+
+  # test policy
+  run_test_policy(env, policy, s_init_range_scale, s_init_range_min, s_goal, epsilon)
 
   env.close()
 

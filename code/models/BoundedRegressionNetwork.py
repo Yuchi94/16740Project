@@ -26,7 +26,8 @@ class BoundedRegressionNetwork(object):
         (32, 'relu')
       ],
       'use_minibatch': True,
-      'batch_size': 32
+      'batch_size': 32,
+      'lr': 0.001
     }
 
     for o in _options:
@@ -139,8 +140,10 @@ class BoundedRegressionNetwork(object):
     Define operations.
     """
 
+    lr = self.options['lr']
+
     # define loss minimization operation
-    optimizer = tf.train.AdamOptimizer()
+    optimizer = tf.train.AdamOptimizer(learning_rate=lr)
     self.components['optimizer'] = optimizer
     loss = self._define_loss(X, Y_pred, Y_true)
     op_minloss = optimizer.minimize(loss)
