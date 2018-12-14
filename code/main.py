@@ -4,6 +4,7 @@
 Skill Learning
 """
 import argparse, math, os, random, sys, signal, time, scipy.integrate, scipy.optimize, pdb
+import time
 sys.path.append("utilities")
 sys.path.append(os.getcwd())
 
@@ -18,6 +19,9 @@ import numpy as np
 import vrepsutil as vu
 from RRTTree import RRTTree
 from RRTConnect import RRTConnectPlanner
+from sbp import SBPlanner
+from astar import AStar
+
 # Constants/hyperparameters - DO NOT MODIFY!
 NUM_BASIS = 3
 NUM_DIM = 3
@@ -90,7 +94,6 @@ class VRepEnvironment(object):
     vrep.simxStartSimulation(self.client_id, vrep.simx_opmode_oneshot)
 
     object_desc, joint_desc, self.obstacles = vu.GenConGridObjDesc()
-    # pdb.set_trace()
     # self.object_handles = vu.GenObjects(self.client_id, object_desc, 0)
 
     object_desc, joint_desc = vu.GenBasicDoorObjDesc()
@@ -101,7 +104,6 @@ class VRepEnvironment(object):
 
     self.door_id = 0
     self.doorhandle_id = 1
-    #pdb.set_trace()
 
     # Set goal position for reacher task
     self.reacher_goal_position = self.DoorHandlePosition.copy()
@@ -226,19 +228,54 @@ class VRepEnvironment(object):
 
 
 def main(args):
+  """
+  Launch.
+  """
+
+  print('initializing...')
+
   env = VRepEnvironment(args.task_id)
   signal.signal(signal.SIGINT, env.signal_handler)
+  np.random.seed(int(time.time()))
 
-  planner = RRTConnectPlanner(env.obstacles)
-  plan_raw = planner.Plan(np.array([0, 0.5]), np.array([0, -0.5]))
+  # initialize planner
+  #planner = RRTConnectPlanner(env.obstacles)
+  #planner = SBPlanner(env.obstacles)
+  planner = AStar(env.obstacles)
 
-  plan = []
-  for p in plan_raw:
-    plan.append(np.array([p[0], p[1], 0.5]))
+  # define starting state and goal state
+  #s_init = np.array([0, 0.5, 0.5])
+  s_init = np.random.random(3) * np.array([1.0, 0.0, 0.5]) + np.array([-0.5, 0.5, 0.0])
+  s_goal = np.array([0, -0.5, 0.25])
+  #s_goal = np.array([0, 0.5, 0.25])
+  epsilon = 0.10
 
-  for p in plan:
+  # set the end-effector to the initial state
+  s_cur = s_init
+  for i in range(10):
+    print('-> %s' % (str(s_cur)))
+    env.setRobotPosition(s_cur.copy())
+
+  # find a plan
+  print('planning...')
+  print('s_init  = %s' % (str(s_init)))
+  print('s_goal  = %s' % (str(s_goal)))
+  print('epsilon = %f' % (epsilon))
+  print('step    = %f' % (epsilon / 4.0))
+  plan = planner.Plan(s_init, s_goal)
+
+  input('press any key to continue...')
+
+  # execute the plan
+  print('executing...')
+  for t, a in enumerate(plan):
+    print('execute %s @ %d' % (str(a), t))
+    s_cur = s_cur + a
     for i in range(10):
-      env.setRobotPosition(np.array(p))
+      print('-> %s' % (str(s_cur)))
+      env.setRobotPosition(s_cur.copy())
+
+  input('press any key to continue...')
 
   env.close()
 

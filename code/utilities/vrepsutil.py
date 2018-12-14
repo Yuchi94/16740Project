@@ -151,12 +151,11 @@ def GenConGridObjDesc(seed=0):
     unique_block_ids = np.unique(Blocks.flatten())
     def construct_block(i, j):
 
-        blk = [3, 0.055,0.055,0.695, -0.3+float(i)*.2 + np.random.uniform(0, 0.1),-0.3+float(j)*.2 + np.random.uniform(0, 0.1),0.35, 0.,0.,0.,1000]
-        obstacles.append(np.array(blk[4:6]))
+        blk = [2, 0.1,0.1,0.695, -0.3+float(i)*.2 + np.random.uniform(-0.1, 0.1),-0.3+float(j)*.2 + np.random.uniform(-0.1, 0.1),np.random.uniform(0, 0.4) + 0.1, 0.,0.,0.,1000]
+        obstacles.append(np.array(blk[4:7]))
         return blk
 
     c = 1
-    np.random.seed(0)
     for block_id in unique_block_ids:
         xs, ys = np.where(Blocks == block_id)
         num = xs.shape[0]
