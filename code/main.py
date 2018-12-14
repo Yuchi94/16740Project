@@ -330,8 +330,8 @@ def run_test_policy(env, policy, s_init_range_scale, s_init_range_min, s_goal, e
 
   # execute the plan
   print('executing...')
-  U_pred, Sigma_pred = policy.predict([s_cur])
   for t in range(T):
+    U_pred, Sigma_pred = policy.predict([s_cur])
     a = U_pred[0] / scalar
     print('execute %s @ %d' % (str(a), t))
     s_cur = s_cur + a
@@ -349,7 +349,7 @@ def main(args):
 
   print('pretraining policy...')
   policy = pretrain_nnpolicy.pretrain(
-    epochs = 200,
+    epochs = 300,
     savedir_policy_net = 'saved/policy_net',
     savedir_variance_net = 'saved/variance_net',
     retrain = False,
@@ -383,7 +383,7 @@ def main(args):
   env.close()
 
   # collect dataset
-  run_collect_dataset(planner, s_init_range_scale, s_init_range_min, s_goal, epsilon, N_dataset_samples)
+  #run_collect_dataset(planner, s_init_range_scale, s_init_range_min, s_goal, epsilon, N_dataset_samples)
 
 
 if __name__ == "__main__":
