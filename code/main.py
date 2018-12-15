@@ -4,6 +4,7 @@
 Skill Learning
 """
 import argparse, math, os, random, sys, signal, time, scipy.integrate, scipy.optimize, pdb
+import time
 sys.path.append("utilities")
 sys.path.append(os.getcwd())
 
@@ -18,6 +19,10 @@ import numpy as np
 import vrepsutil as vu
 from RRTTree import RRTTree
 from RRTConnect import RRTConnectPlanner
+from sbp import SBPlanner
+from astar import AStar
+import pretrain_nnpolicy
+
 # Constants/hyperparameters - DO NOT MODIFY!
 NUM_BASIS = 3
 NUM_DIM = 3
@@ -90,8 +95,7 @@ class VRepEnvironment(object):
     vrep.simxStartSimulation(self.client_id, vrep.simx_opmode_oneshot)
 
     object_desc, joint_desc, self.obstacles = vu.GenConGridObjDesc()
-
-    self.object_handles = vu.GenObjects(self.client_id, object_desc)
+    # self.object_handles = vu.GenObjects(self.client_id, object_desc, 0)
 
     object_desc, joint_desc = vu.GenBasicDoorObjDesc()
     self.object_handles = vu.GenObjects(self.client_id, object_desc)
@@ -101,7 +105,6 @@ class VRepEnvironment(object):
 
     self.door_id = 0
     self.doorhandle_id = 1
-    #pdb.set_trace()
 
     # Set goal position for reacher task
     self.reacher_goal_position = self.DoorHandlePosition.copy()
@@ -225,18 +228,163 @@ class VRepEnvironment(object):
     self.setup_simulation()
 
 
+def run_collect_dataset(planner, s_init_range_scale, s_init_range_min, s_goal, epsilon, N):
+  """
+  Collect dataset.
+  """
+
+  import pickle
+  from tqdm import tqdm
+  import datetime
+
+  dataset = []
+
+  print('collecting dataset...')
+  #for i in tqdm(range(N)):
+  for i in range(N):
+    print('collecting sample trajectory @ %d/%d' % (i+1, N))
+
+    plan = None
+    s_init = None
+    while plan is None:
+      # define random initial state
+      s_init = np.random.random(3) * s_init_range_scale + s_init_range_min
+
+      # plan for goal
+      try:
+        plan = planner.Plan(s_init, s_goal)
+      except Exception as e:
+        plan = None
+
+    # add to the dataset
+    s_cur = s_init
+    for t, a in enumerate(plan):
+      dataset.append((s_cur, a))
+      s_cur = s_cur + a
+
+  # save the dataset
+  timestamp = datetime.datetime.now().timestamp()
+  save_file_name = 'dataset.' + str(timestamp) + '.pkl'
+  with open(save_file_name, 'wb') as f:
+    pickle.dump(dataset, f)
+  print('dataset saved to %s' % (save_file_name))
+
+  return dataset
+
+
+def run_test_planner(env, planner, s_init_range_scale, s_init_range_min, s_goal, epsilon):
+  """
+  Test planner.
+  """
+
+  # define starting state
+  s_init = np.random.random(3) * s_init_range_scale + s_init_range_min
+
+  # set the end-effector to the initial state
+  s_cur = s_init
+  for i in range(10):
+    print('-> %s' % (str(s_cur)))
+    env.setRobotPosition(s_cur.copy())
+
+  # find a plan
+  print('planning...')
+  print('s_init  = %s' % (str(s_init)))
+  print('s_goal  = %s' % (str(s_goal)))
+  print('epsilon = %f' % (epsilon))
+  print('step    = %f' % (epsilon / 4.0))
+  plan = planner.Plan(s_init, s_goal)
+
+  input('press any key to continue...')
+
+  # execute the plan
+  print('executing...')
+  for t, a in enumerate(plan):
+    print('execute %s @ %d' % (str(a), t))
+    s_cur = s_cur + a
+    for i in range(10):
+      print('-> %s' % (str(s_cur)))
+      env.setRobotPosition(s_cur.copy())
+
+  input('press any key to continue...')
+
+
+def run_test_policy(env, policy, s_init_range_scale, s_init_range_min, s_goal, epsilon):
+  """
+  Test planner.
+  """
+
+  scalar = 100
+  T = 100
+
+  # define starting state
+  s_init = np.random.random(3) * s_init_range_scale + s_init_range_min
+
+  # set the end-effector to the initial state
+  s_cur = s_init
+  for i in range(10):
+    print('-> %s' % (str(s_cur)))
+    env.setRobotPosition(s_cur.copy())
+
+  # find a plan
+  input('press any key to continue...')
+
+  # execute the plan
+  print('executing...')
+  U_pred, Sigma_pred = policy.predict([s_cur])
+  for t in range(T):
+    a = U_pred[0] / scalar
+    print('execute %s @ %d' % (str(a), t))
+    s_cur = s_cur + a
+    for i in range(10):
+      print('-> %s' % (str(s_cur)))
+      env.setRobotPosition(s_cur.copy())
+
+  input('press any key to continue...')
+
+
 def main(args):
+  """
+  Launch.
+  """
+
+  print('pretraining policy...')
+  policy = pretrain_nnpolicy.pretrain(
+    epochs = 200,
+    savedir_policy_net = 'saved/policy_net',
+    savedir_variance_net = 'saved/variance_net',
+    retrain = False,
+    keep_training = False
+  )
+
+  print('initializing...')
+
   env = VRepEnvironment(args.task_id)
   signal.signal(signal.SIGINT, env.signal_handler)
+  np.random.seed(int(time.time()))
 
-  planner = RRTConnectPlanner(env.obstacles)
-  plan = planner.Plan(np.array([0, 0.5]), np.array([0, -0.5]))
+  # initialize planner
+  #planner = RRTConnectPlanner(env.obstacles)
+  #planner = SBPlanner(env.obstacles)
+  planner = AStar(env.obstacles)
 
-  for p in plan:
-    for i in range(10):
-      env.setRobotPosition(np.array([p[0], p[1], 0.5]))
+  # define parameters
+  s_init_range_scale = np.array([1.0, 0.0, 0.5])
+  s_init_range_min   = np.array([-0.5, 0.5, 0.0])
+  s_goal             = np.array([0, -0.5, 0.25])
+  epsilon            = 0.10
+  N_dataset_samples  = 1000
+
+  # test planner
+  #run_test_planner(env, planner, s_init_range_scale, s_init_range_min, s_goal, epsilon)
+
+  # test policy
+  run_test_policy(env, policy, s_init_range_scale, s_init_range_min, s_goal, epsilon)
 
   env.close()
+
+  # collect dataset
+  run_collect_dataset(planner, s_init_range_scale, s_init_range_min, s_goal, epsilon, N_dataset_samples)
+
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()

@@ -8,7 +8,7 @@ class RRTConnectPlanner():
     def __init__(self, planning_env):
         self.planning_env = planning_env
         self.delta = 0.005
-        self.r = 0.09
+        self.r = 0.1
         
 
     def Plan(self, start_config, goal_config, epsilon = 0.02):
@@ -83,7 +83,7 @@ class RRTConnectPlanner():
         if np.random.uniform(0, 1) < 0.1:
             return goal
         else:
-            return np.random.uniform(-0.4, 0.4, 2)
+            return [np.random.uniform(-0.4, 0.4), np.random.uniform(-0.4, 0.4), np.random.uniform(0.1, 0.5)]
 
     def checkCollision(self, point):
 

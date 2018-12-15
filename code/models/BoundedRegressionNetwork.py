@@ -25,7 +25,9 @@ class BoundedRegressionNetwork(object):
         (64, 'relu'),
         (32, 'relu')
       ],
-      'batch_size': 32
+      'use_minibatch': True,
+      'batch_size': 32,
+      'lr': 0.001
     }
 
     for o in _options:
@@ -68,6 +70,9 @@ class BoundedRegressionNetwork(object):
 
     # initialize global variables
     self.sess.run(tf.global_variables_initializer())
+
+    # initialize saver
+    self.saver = tf.train.Saver()
 
 
   def _build_model(self, X):
@@ -138,8 +143,10 @@ class BoundedRegressionNetwork(object):
     Define operations.
     """
 
+    lr = self.options['lr']
+
     # define loss minimization operation
-    optimizer = tf.train.AdamOptimizer()
+    optimizer = tf.train.AdamOptimizer(learning_rate=lr)
     self.components['optimizer'] = optimizer
     loss = self._define_loss(X, Y_pred, Y_true)
     op_minloss = optimizer.minimize(loss)
@@ -199,7 +206,10 @@ class BoundedRegressionNetwork(object):
     Train the network.
     """
 
-    batch_size = self.options['batch_size']
+    use_minibatch = self.options['use_minibatch']
+    batch_size = len(X_train)
+    if use_minibatch:
+      batch_size = self.options['batch_size']
 
     history = []
 
@@ -212,7 +222,8 @@ class BoundedRegressionNetwork(object):
       random.shuffle(indices_train)
 
       # train through all training samples
-      for i_batch in tqdm(range(N_batches)):
+      enumerator = tqdm(range(N_batches)) if verbose else range(N_batches)
+      for i_batch in enumerator:
         # determine sample indices for the training batch
         ptr_lower = i_batch * batch_size
         ptr_upper = ptr_lower + batch_size
@@ -258,9 +269,26 @@ class BoundedRegressionNetwork(object):
     metrics_test = self.evaluate(X_test, Y_test)
 
     # log
-    print('test: test_loss=%.4f' % (metrics_test['loss']))
+    if verbose:
+      print('test: test_loss=%.4f' % (metrics_test['loss']))
 
     return metrics_test
+
+
+  def save(self, model_path):
+    """
+    Save the model.
+    """
+
+    self.saver.save(self.sess, model_path)
+
+
+  def restore(self, model_path):
+    """
+    Restore the model.
+    """
+
+    self.saver.restore(self.sess, model_path)
 
 
 def _test():
@@ -292,6 +320,7 @@ def _test():
     'x_dim': 3,
     'y_dim': 2,
     'y_bounds': y_bounds,
+    'use_minibatch': True,
     'batch_size': 128
   }
 
