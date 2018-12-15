@@ -4,7 +4,7 @@ import pickle
 from nnpolicy import NNPolicy
 
 
-def pretrain(epochs, savedir_policy_net, savedir_variance_net, retrain=False, keep_training=False):
+def pretrain(epochs, savedir_policy_net, savedir_variance_net, retrain=False, keep_training=False, print_test=False):
   """
   Train neural network policy.
   """
@@ -97,11 +97,20 @@ def pretrain(epochs, savedir_policy_net, savedir_variance_net, retrain=False, ke
       policy_loss_sum   += policy_loss   * len(indices_batch)
       variance_loss_sum += variance_loss * len(indices_batch)
 
-    print('epoch #%d: policy_loss: %.6f, variance_loss: %.6f' % (
-      ep + 1,
-      policy_loss_sum / len(indices_train),
-      variance_loss_sum / len(indices_train)
-    ))
+    if print_test:
+      U_pred, Sigma_pred = net.predict(X_test)
+      metrics_test = net.test(X_test, U_test, verbose=False)
+      print('epoch #%d: test_loss: %.6f, test_variance: %.6f' % (
+        ep + 1,
+        metrics_test['loss'],
+        np.mean(Sigma_pred)
+      ))
+    else:
+      print('epoch #%d: policy_loss: %.6f, variance_loss: %.6f' % (
+        ep + 1,
+        policy_loss_sum / len(indices_train),
+        variance_loss_sum / len(indices_train)
+      ))
 
   # test the network
   U_pred, Sigma_pred = net.predict(X_test)

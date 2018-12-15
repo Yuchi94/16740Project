@@ -352,8 +352,9 @@ def main(args):
     epochs = 300,
     savedir_policy_net = 'saved/policy_net',
     savedir_variance_net = 'saved/variance_net',
-    retrain = False,
-    keep_training = False
+    retrain = True,
+    keep_training = False,
+    print_test=True
   )
 
   print('initializing...')
